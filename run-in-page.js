@@ -3,14 +3,44 @@ function isSiteMatched(hostname, path) {
          && location.pathname.startsWith(path)
 }
 
+function highlightAll() {
+  highlightInCodeBlocks();
+  highlightMultilinePres();
+}
+
 /**
- * This function should only be invoked in the page where the context menu/browser button
- * was invoked and not in the background.js page
- */
+ * Highlight code in a multi-line <pre>s
+ * @note should not be done automatically
+ **/
+function highlightMultilinePres() {
+  var pres = document.querySelectorAll('pre');
+  
+  for (var i = 0; i < pres.length; ++i) {
+    var pre = pres[i];
+
+    // only all text pres are desired to be fixed
+    if (pre.children.length > 0)
+      continue;
+    
+    // only multi-line pres
+    if (!pre.textContent.includes("\n"))
+      continue;
+      
+    var code = document.createElement("CODE");
+    code.innerHTML = pre.innerHTML;
+    pre.innerHTML = "";
+    pre.appendChild(code);
+    
+    hightlightCodeBlock(code, pre);
+  }
+}
+
+/**
+ * Highlight code in a pre > code blocks 
+ * @note could be done automatically
+ **/
 function highlightInCodeBlocks() {
-  
-  fixSimpleMsdnDocumentation();
-  
+
   var codes = document.querySelectorAll('pre code');
   
   for (var i = 0; i < codes.length; ++i) {
@@ -19,33 +49,6 @@ function highlightInCodeBlocks() {
 
     hightlightCodeBlock(code, pre);
   }
-}
-
-/**
- *  Fix code snippets on msdn.microsoft.com that only contain PRE and no CODE tags 
- */
-function fixSimpleMsdnDocumentation() {
-  
-  // sometimes, documentation is only contained in a simple PRE block with no code
-  // element.  If that's the case, put the content into a PRE CODE so that later on
-  // the hightlight will work
-  if (isSiteMatched("msdn.microsoft.com", "/en-us/library/")) {
-    var pres = document.querySelectorAll('.codeSnippetContainerCodeContainer pre');
-  
-    for (var i = 0; i < pres.length; ++i) {
-      var pre = pres[i];
-      if (pre.children.length == []) {
-        // move any html in the pre into the code
-        var code = document.createElement("CODE");
-        code.innerHTML = pre.innerHTML;
-        pre.innerHTML = "";
-        pre.appendChild(code);
-        
-        hightlightCodeBlock(code, pre);
-      }
-    }
-  }
-  
 }
 
 /**
@@ -82,8 +85,6 @@ function hightlightCodeBlock(codeElement, preElement) {
     while (codeElement.lastElementChild != null) {
       codeElement.removeChild(codeElement.lastElementChild);
     }
-
-    console.log(codeElement);
   }
 
   hljs.highlightBlock(codeElement);
@@ -106,8 +107,7 @@ function fixMsdnMagazine(codeElement, preElement) {
   }
 }
 
-console.log("Highlighted Blocks");
-highlightInCodeBlocks();
+highlightAll();
 
 // Used so that we don't load the scripts multiple times
 var isLoaded = true;
